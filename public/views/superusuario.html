@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Solicitações</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    body {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-image: linear-gradient(45deg, blue, black);
+        margin: 0;
+    }
+    
+    .container {
+        background-color: rgba(0, 0, 0, 0.8);
+        width: 100%;
+        padding: 2rem;
+        border-radius: 8px;
+    }
+    
+    h1 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #ffffff;
+    }
+    
+    .input-group {
+        margin-bottom: 1.2rem;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+        color: #ffffff;
+    }
+    
+    input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 1rem;
+    }
+    
+    input:focus {
+        border-color: dodgerblue;
+        outline: none;
+        box-shadow: 0 0 5px rgba(0, 25, 247, 0.5);
+    }
+    
+    .btn-cadastro {
+        width: 100%;
+        padding: 10px;
+        background-color: blue;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn-login {
+        width: 100%;
+        padding: 10px;
+        background-color: blue;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn-solicitacao{
+        width: 100%;
+        padding: 10px;
+        background-color: blue;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn-cadastro:hover {
+        background-color:dodgerblue;
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 1rem;
+        color: #ffffff;
+    }
+    
+    .login-link a {
+        color: dodgerblue;
+        text-decoration: none;
+    }
+    
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+    .btn-voltar {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background-color:blue;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 20px;
+        text-decoration: none;
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gerenciamento de Solicitações</h1>
+
+        <div id="alerta" class="alert d-none" role="alert"></div>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Usuário (CPF)</th>
+                    <th>Quadra</th>
+                    <th>Data</th>
+                    <th>Hora Início</th>
+                    <th>Hora Fim</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="lista-solicitacoes">
+
+            </tbody>
+        </table> 
+        <a href="calendario.html" class="btn-voltar" id="btnVoltar">Voltar para o Calendário</a>
+    </div>
+
+    
+
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        window.onload = async function() {
+    // Mostrar o prompt para o CPF do superusuário
+    const cpfSuperuser = prompt("Por favor, insira o seu CPF:");
+
+    // Verificar se o CPF é válido e se é um superusuário
+    const superuser = await verificarSuperusuario(cpfSuperuser);
+
+    if (superuser) {
+        carregarSolicitacoes();
+    } else {
+        alert("Acesso negado. Apenas superusuários podem acessar esta página.");
+        window.location.href = "calendario.html"; 
+    }
+}
+
+// Função para verificar se o CPF corresponde a um superusuário
+async function verificarSuperusuario(cpf) {
+    try {
+        const response = await fetch(`http://localhost:5000/usuarios/${cpf}`);
+        const usuario = await response.json();
+
+        // Verificar se o usuário existe e é um superusuário
+        return usuario && usuario.superuser;
+    } catch (error) {
+        console.error("Erro ao verificar o superusuário:", error);
+        return false;
+    }
+}
+        async function carregarSolicitacoes() {
+            try {
+                const response = await fetch('http://localhost:5000/agendamentos');
+                const solicitacoes = await response.json();
+                const tabela = document.getElementById("lista-solicitacoes");
+
+                tabela.innerHTML = '';
+
+                solicitacoes.forEach((solicitacao, index) => {
+    const tr = document.createElement("tr");
+
+    // Formatação da data e horas
+    const data = new Date(solicitacao.data_agendamento).toLocaleDateString('pt-BR');
+    const horaInicio = new Date(solicitacao.hora_inicio).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    const horaFim = new Date(solicitacao.hora_fim).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    tr.innerHTML = `
+        <td>${solicitacao.cpf}</td>
+        <td>${solicitacao.cod_quadra}</td>
+        <td>${data}</td>
+        <td>${horaInicio}</td>
+        <td>${horaFim}</td>
+        <td>${solicitacao.status}</td>
+        <td>
+            <button class="btn btn-success btn-status" onclick="alterarStatus(${solicitacao.cod_agendamento}, 'confirmado')">Confirmar</button>
+            <button class="btn btn-warning btn-status" onclick="alterarStatus(${solicitacao.cod_agendamento}, 'pendente')">Pendente</button>
+            <button class="btn btn-danger btn-status" onclick="alterarStatus(${solicitacao.cod_agendamento}, 'cancelado')">Cancelar</button>
+        </td>
+    `;
+
+                    tabela.appendChild(tr);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar solicitações:", error);
+                exibirAlerta("Erro ao carregar as solicitações. Tente novamente.", "danger");
+            }
+        }
+
+        async function alterarStatus(codAgendamento, novoStatus) {
+    const superuserCpf = "12345678901"; // Substitua pelo CPF real do superusuário
+
+    try {
+        const response = await fetch(`http://localhost:5000/agendamentos/${codAgendamento}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: novoStatus, superuserCpf: superuserCpf })
+        });
+
+        if (response.ok) {
+            exibirAlerta(`Status atualizado para "${novoStatus}" com sucesso.`, "success");
+            carregarSolicitacoes();
+        } else {
+            const errorData = await response.json();
+            exibirAlerta(`Erro: ${errorData.errors?.[0]?.msg || errorData.error || 'Não foi possível atualizar o status.'}`, "danger");
+        }
+    } catch (error) {
+        console.error("Erro ao alterar status:", error);
+        exibirAlerta("Erro ao alterar o status. Tente novamente.", "danger");
+    }
+}
+
+        function exibirAlerta(mensagem, tipo) {
+            const alerta = document.getElementById("alerta");
+            alerta.textContent = mensagem;
+            alerta.className = `alert alert-${tipo}`;
+            alerta.classList.remove("d-none");
+
+            setTimeout(() => {
+                alerta.classList.add("d-none");
+            }, 5000);
+        }
+
+        // Inicializar a página
+        carregarSolicitacoes();
+    </script>
+</body>
+</html>
